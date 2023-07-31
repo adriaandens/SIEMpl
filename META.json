@@ -1,7 +1,7 @@
 {
    "abstract" : "It's new $module",
    "author" : [
-      "Adriaan <adriaan.dens@gmail.com>"
+      "Adriaan"
    ],
    "dynamic_config" : 0,
    "generated_by" : "Minilla/v3.1.22, CPAN::Meta::Converter version 2.150010",

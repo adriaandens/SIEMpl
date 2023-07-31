@@ -1,11 +1,21 @@
 package SIEMpl;
-use 5.008001;
-use strict;
-use warnings;
+use 5.038000;
 
 our $VERSION = "0.01";
 
+use feature 'class';
+use Carp;
 
+class SIEMpl {
+
+	field $config :param; # :isa(SIEMpl::Config);
+
+	ADJUST {
+		if(ref($config) ne "SIEMpl::Config") {
+			croak "The config parameter needs to be a SIEMpl::Config object";
+		}
+	}
+}
 
 1;
 __END__
@@ -33,7 +43,7 @@ it under the same terms as Perl itself.
 
 =head1 AUTHOR
 
-Adriaan E<lt>adriaan.dens@gmail.comE<gt>
+Adriaan
 
 =cut
 
