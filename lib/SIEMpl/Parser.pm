@@ -4,6 +4,8 @@ use 5.038000;
 our $VERSION = "0.01";
 
 use feature 'class';
+use DateTime::Format::Strptime qw(strftime);
+use Time::Piece;
 use Carp;
 
 class SIEMpl::Parser {
@@ -21,8 +23,27 @@ class SIEMpl::Parser {
 		croak("You need to call a subclass");
 	}
 
-	method close() {
+	# Default timestamp looks like: Aug  2 16:01:02
+	method parse_timestamp($line) {
+		my ($date, $log) = m/^(\w+\s+\d+\s+\d+:\d+:\d+)\s+(.*)$/;
+		# DateTime gives back weird time because we don't have a Year in our string, so it thinks we are in year 1....
+		# TODO: If we take the current year but we are January 1st and we are parsing something from yesterday, then the year is wrong! Might be best to assume (even if we are in July "right now") that everything that gets parsed as an epoch bigger than "now" is wrong. Logs are about the passed, not the future.
+		my $year = localtime->strftime("%Y");
+		# %b or %B or %h: The month name according to the given locale, in abbreviated form or the full name.
+		# %d or %e: The day of month (01-31). This will parse single digit numbers as well.
+		my $format = "%Y %b %d %T";
+		my $strp = DateTime::Format::Strptime->new(
+			pattern   => $format,
+			locale    => 'en_US',
+			time_zone => 'Europe/Brussels',
+			on_error => 'croak'
+		);
+		my $dt = $strp->parse_datetime($year . ' ' . $date);
+		return strftime("%s", $dt);
+	}
 
+	method close() {
+		croak("You need to call a subclass");
 	}
 
 }

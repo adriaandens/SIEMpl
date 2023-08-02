@@ -11,12 +11,16 @@ class SIEMpl::Parser::Authlog :isa(SIEMpl::Parser) {
 	field $f;
 
 	method open() {
-		open($f, '<', $self->source());
+		open($f, '<', $self->source()) or die "Cannot open " . $self->source() . "\n";
 	}
 
 	# Magic happens here
 	method parse() {
-
+		while(<$f>) {
+			my $line = $_;
+			my $epoch = $self->parse_timestamp($line);
+			die "Line: $line";
+		}
 	}
 
 	method close() {

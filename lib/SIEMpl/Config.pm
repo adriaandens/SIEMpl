@@ -9,6 +9,7 @@ use Carp;
 class SIEMpl::Config {
 
 	field $name :param //= "SIEMpl";
+	field $assetdb; # Contains all our assets
 
 	method name { $name }
 	
