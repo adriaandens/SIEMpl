@@ -13,6 +13,10 @@ class SIEMpl::Parser {
 	field $source :param; # A file, a DB connection string, ...
 
 	method source { $source }
+	# TODO: If we can set the source to something else we can continue with
+	# the unfinished events from Parsers, because files can logically follow
+	# one an other and complete eachother
+	method set_source($s) { $source = $s }
 
 	method open() {
 		croak("You need to call a subclass");
