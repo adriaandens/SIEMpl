@@ -24,8 +24,9 @@ class SIEMpl::Parser {
 	}
 
 	# Default timestamp looks like: Aug  2 16:01:02
-	method parse_timestamp($line) {
-		my ($date, $log) = m/^(\w+\s+\d+\s+\d+:\d+:\d+)\s+(.*)$/;
+	# Returns a hashref with "epoch" and "log" as keys.
+	method base_parsing($line) {
+		my ($date, $log) = $line =~ m/^(\w+\s+\d+\s+\d+:\d+:\d+)\s+(.*)$/;
 		# DateTime gives back weird time because we don't have a Year in our string, so it thinks we are in year 1....
 		# TODO: If we take the current year but we are January 1st and we are parsing something from yesterday, then the year is wrong! Might be best to assume (even if we are in July "right now") that everything that gets parsed as an epoch bigger than "now" is wrong. Logs are about the passed, not the future.
 		my $year = localtime->strftime("%Y");
@@ -39,7 +40,9 @@ class SIEMpl::Parser {
 			on_error => 'croak'
 		);
 		my $dt = $strp->parse_datetime($year . ' ' . $date);
-		return strftime("%s", $dt);
+
+		my %event = ("epoch" => strftime("%s", $dt), "log" => $log);
+		return \%event; 
 	}
 
 	method close() {
