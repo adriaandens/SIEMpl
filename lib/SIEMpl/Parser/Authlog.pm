@@ -56,8 +56,37 @@ class SIEMpl::Parser::Authlog :isa(SIEMpl::Parser) {
 		}
 	}
 
+	# TODO: The obvious problem here is that one failed login and one successful login generate multiple parsed events. But it should count as 1 "logical" event such that counts in the SIEM are correct.
 	method parse_sshd($event, $log) {
+		if($log =~ m/Connection closed by invalid user (\S+) (\S+) port (\d+)/) {
+			$event->{target_username} = $1;
+			$event->{source_ip} = $2;
+			$event->{source_port} = $3;
+		} elsif($log =~ m/Invalid user (\S+) from (\S+) port (\d+)/) {
+			$event->{target_username} = $1;
+			$event->{source_ip} = $2;
+			$event->{source_port} = $3;
+		} elsif($log =~ m/Received disconnect from (\S+) port (\d+)/) {
+			$event->{source_ip} = $1;
+			$event->{source_port} = $2;
+		} elsif($log =~ m/Disconnected from invalid user (\S+) (\S+) port (\d+)/) {
+			$event->{target_username} = $1;
+			$event->{source_ip} = $2;
+			$event->{source_port} = $3;
+		} elsif($log =~ m/Accepted publickey from for (\S+) from (\S+) port (\d+) ssh2: RSA SHA256:(\S+)/) {
+			$event->{target_username} = $1;
+			$event->{source_ip} = $2;
+			$event->{source_port} = $3;
+			$event->{key_type} = 'RSA';
+			$event->{key_sha256} = $4;
+		} elsif($log =~ m/pam_unix\(sshd:session\): session opened for user ([^\(]+)\(uid=(\d+)\) by \(uid=(\d+)\)/) {
+			$event->{target_username} = $1;
+			$event->{target_userid} = $2;
+			# The one who allowed it will always be root == user of sshd?
+		}
 
+		# TODO: generate a log with a successful login with password
+		# TODO: generate a log with other types of Keys (not RSA)
 	}
 
 	method parse_su($event, $log) {
