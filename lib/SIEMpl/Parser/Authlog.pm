@@ -6,6 +6,10 @@ our $VERSION = "0.01";
 use feature 'class';
 use Carp;
 
+use SIEMpl::Event;
+use SIEMpl::Event::NonInteractiveSession;
+use SIEMpl::Event::InteractiveSession;
+
 class SIEMpl::Parser::Authlog :isa(SIEMpl::Parser) {
 
 	field $f;
@@ -19,29 +23,32 @@ class SIEMpl::Parser::Authlog :isa(SIEMpl::Parser) {
 	# Magic happens here
 	method parse() {
 		while(<$f>) {
-			my $event = $self->base_parsing($_);
-			#die "Line: $event->{epoch}, Log: $event->{log}";
-			my ($hostname, $program, $pid, $more) = $event->{log} =~ m/(\S+)\s+([\w-]+)(\[(\d+)\])?(.*)/;
-			$event->{hostname} = lc($hostname);
-			$event->{program} = lc($program);
-			$event->{pid} if defined($pid);
-			if($event->{program} eq 'cron') {
-				$self->parse_cron($event, $more)
-			} elsif($event->{program} eq 'sshd') {
-				$self->parse_sshd($event, $more)
-			} elsif($event->{program} eq 'su') {
-				$self->parse_su($event, $more)
-			} elsif($event->{program} eq 'sudo') {
-				$self->parse_sudo($event, $more)
-			} elsif($event->{program} eq 'systemd') {
-				$self->parse_systemd($event, $more)
-			} elsif($event->{program} eq 'systemdlogind') {
-				$self->parse_systemdlogind($event, $more)
-			} else {
-				# we don't care? If we do care, make a case for it.
-			}		
-
+			$self->parse_line($_);
 		}
+	}
+
+	method parse_line($line) {
+		my $event = $self->base_parsing($line);
+		my ($hostname, $program, $wrap, $pid, $more) = $event->{log} =~ m/(\S+)\s+([\w-]+)(\[(\d+)\])?(.*)/;
+		$event->{hostname} = lc($hostname);
+		$event->{program} = lc($program);
+		$event->{pid} = $pid if $pid;
+		if($event->{program} eq 'cron') {
+			$self->parse_cron($event, $more)
+		} elsif($event->{program} eq 'sshd') {
+			$self->parse_sshd($event, $more)
+		} elsif($event->{program} eq 'su') {
+			$self->parse_su($event, $more)
+		} elsif($event->{program} eq 'sudo') {
+			$self->parse_sudo($event, $more)
+		} elsif($event->{program} eq 'systemd') {
+			$self->parse_systemd($event, $more)
+		} elsif($event->{program} eq 'systemdlogind') {
+			$self->parse_systemdlogind($event, $more)
+		} else {
+			# we don't care? If we do care, make a case for it.
+		}
+		return $event; # For allowing testing/introspection.
 	}
 
 	method parse_cron($event, $log) {
@@ -50,9 +57,11 @@ class SIEMpl::Parser::Authlog :isa(SIEMpl::Parser) {
 			$event->{target_userid} = $2;
 			$event->{source_userid} = $3;
 			# TODO: Make a new unfinished event
+			my $session = SIEMpl::Event::NonInteractiveSession->new(%$event);
 		} elsif($log =~ m/session closed for user (\S+)/) {
 			$event->{target_username} = $1;
 			# TODO: End the unfinished event and move to finished events.
+			$event->{end_time} = $event->{epoch};
 		}
 	}
 
@@ -60,10 +69,18 @@ class SIEMpl::Parser::Authlog :isa(SIEMpl::Parser) {
 	method parse_sshd($event, $log) {
 		if($log =~ m/Connection closed by invalid user (\S+) (\S+) port (\d+)/) {
 			$event->{target_username} = $1;
+			$event->{target_valid_username} = 0;
 			$event->{source_ip} = $2;
 			$event->{source_port} = $3;
+		} elsif($log =~ m/Connection closed by authenticating user (\S+) (\S+) port (\d+)/) {
+			$event->{target_username} = $1;
+			$event->{target_valid_username} = 1;
+			$event->{source_ip} = $2;
+			$event->{source_port} = $3;
+
 		} elsif($log =~ m/Invalid user (\S+) from (\S+) port (\d+)/) {
 			$event->{target_username} = $1;
+			$event->{target_valid_username} = 0;
 			$event->{source_ip} = $2;
 			$event->{source_port} = $3;
 		} elsif($log =~ m/Received disconnect from (\S+) port (\d+)/) {
@@ -71,6 +88,7 @@ class SIEMpl::Parser::Authlog :isa(SIEMpl::Parser) {
 			$event->{source_port} = $2;
 		} elsif($log =~ m/Disconnected from invalid user (\S+) (\S+) port (\d+)/) {
 			$event->{target_username} = $1;
+			$event->{target_valid_username} = 0;
 			$event->{source_ip} = $2;
 			$event->{source_port} = $3;
 		} elsif($log =~ m/Accepted publickey from for (\S+) from (\S+) port (\d+) ssh2: RSA SHA256:(\S+)/) {
@@ -82,6 +100,8 @@ class SIEMpl::Parser::Authlog :isa(SIEMpl::Parser) {
 		} elsif($log =~ m/pam_unix\(sshd:session\): session opened for user ([^\(]+)\(uid=(\d+)\) by \(uid=(\d+)\)/) {
 			$event->{target_username} = $1;
 			$event->{target_userid} = $2;
+
+			# 
 			# The one who allowed it will always be root == user of sshd?
 		}
 
