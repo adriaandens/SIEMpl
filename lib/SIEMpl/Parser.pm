@@ -48,7 +48,7 @@ class SIEMpl::Parser {
 			return $self->base_parsing($line, $year - 1); # Try a year less
 		}
 
-		my %event = ("epoch" => strftime("%s", $dt), "log" => $log);
+		my %event = ("epoch" => strftime("%s", $dt), "raw_log" => $line, "log" => $log);
 		return \%event; 
 	}
 
