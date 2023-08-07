@@ -10,17 +10,23 @@ use SIEMpl::Event;
 
 class SIEMpl::Event::NonInteractiveSession :isa(SIEMpl::Event) {
 
-	field $epoch :param;
-	field $log :param; # Not sure if needed
-	field $target_username :param;
-	field $target_userid :param;
-	field $source_userid :param;
-	field $hostname :param;
-	field $program :param;
-	field $pid :param;
+	field $target_username;
+	field $target_userid;
+	field $source_userid;
+	field $hostname;
+	field $program;
+	field $pid;
 
-	ADJUST {
+	# Overloading SIEMpl::Event->add_raw_event
+	method add_raw_event($event) {
+		$self->add_base_event($event); # Extracts epoch for us and sets start/end time
 
+		$target_username = $event->{target_username};
+		$target_userid = $event->{target_userid};
+		$source_userid = $event->{source_userid};
+		$hostname = $event->{hostname};
+		$program = $event->{program};
+		$pid = $event->{pid};
 	}
 
 	method getString() {

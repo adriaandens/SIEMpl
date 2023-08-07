@@ -57,7 +57,8 @@ class SIEMpl::Parser::Authlog :isa(SIEMpl::Parser) {
 			$event->{target_userid} = $2;
 			$event->{source_userid} = $3;
 			# TODO: Make a new unfinished event
-			my $session = SIEMpl::Event::NonInteractiveSession->new(%$event);
+			my $session = SIEMpl::Event::NonInteractiveSession->new();
+			$session->add_raw_event($event);
 		} elsif($log =~ m/session closed for user (\S+)/) {
 			$event->{target_username} = $1;
 			# TODO: End the unfinished event and move to finished events.

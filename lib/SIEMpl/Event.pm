@@ -14,6 +14,10 @@ class SIEMpl::Event {
 	field $end_time;
 
 	method add_raw_event($event) {
+		$self->add_base_event($event);
+	}
+
+	method add_base_event($event) {
 		if(! @raw_events) {
 			$start_time = $event->{epoch};
 			$end_time = $event->{epoch};
