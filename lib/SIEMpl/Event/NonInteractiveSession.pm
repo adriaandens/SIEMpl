@@ -17,16 +17,29 @@ class SIEMpl::Event::NonInteractiveSession :isa(SIEMpl::Event) {
 	field $program;
 	field $pid;
 
+	method target_username { $target_username }
+	method target_userid { $target_userid }
+	method source_userid { $source_userid }
+	method hostname { $hostname }
+	method program { $program }
+	method pid { $pid }
+
 	# Overloading SIEMpl::Event->add_raw_event
 	method add_raw_event($event) {
 		$self->add_base_event($event); # Extracts epoch for us and sets start/end time
 
-		$target_username = $event->{target_username};
-		$target_userid = $event->{target_userid};
-		$source_userid = $event->{source_userid};
-		$hostname = $event->{hostname};
-		$program = $event->{program};
-		$pid = $event->{pid};
+		if($event->{type} eq 'session_start') {
+			$target_username = $event->{target_username};
+			$target_userid = $event->{target_userid};
+			$source_userid = $event->{source_userid};
+			$hostname = $event->{hostname};
+			$program = $event->{program};
+			$pid = $event->{pid};
+		} elsif($event->{type} eq 'session_end') {
+			# We don't have any new info, everything is done in the super class.
+		} else {
+			croak("Unexpected type");
+		}
 	}
 
 	method getString() {

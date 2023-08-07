@@ -13,8 +13,7 @@ use SIEMpl::Event::InteractiveSession;
 class SIEMpl::Parser::Authlog :isa(SIEMpl::Parser) {
 
 	field $f;
-	field %incomplete_events = ();
-	field %completed_events = ();
+	field %incomplete_events = (); # Our events can be multi-line before being complete.
 
 	method open() {
 		open($f, '<', $self->source()) or die "Cannot open " . $self->source() . "\n";
@@ -56,13 +55,24 @@ class SIEMpl::Parser::Authlog :isa(SIEMpl::Parser) {
 			$event->{target_username} = $1;
 			$event->{target_userid} = $2;
 			$event->{source_userid} = $3;
+			$event->{type} = 'session_start';
 			# TODO: Make a new unfinished event
 			my $session = SIEMpl::Event::NonInteractiveSession->new();
 			$session->add_raw_event($event);
+
+			my $key = $event->{hostname} . $event->{pid} . $event->{target_username};
+			$incomplete_events{$key} = $session;
 		} elsif($log =~ m/session closed for user (\S+)/) {
 			$event->{target_username} = $1;
-			# TODO: End the unfinished event and move to finished events.
-			$event->{end_time} = $event->{epoch};
+			$event->{type} = 'session_end';
+			my $key = $event->{hostname} . $event->{pid} . $event->{target_username};
+			my $session = $incomplete_events{$key};
+			return if ! $session; # We miss the session start...
+			$session->add_raw_event($event);
+
+			# The event is now complete.
+			$self->add_completed_event($session);
+			delete $incomplete_events{$key};
 		}
 	}
 

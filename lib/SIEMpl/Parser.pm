@@ -11,12 +11,16 @@ use Carp;
 class SIEMpl::Parser {
 
 	field $source :param; # A file, a DB connection string, ...
+	field @completed_events = ();
 
 	method source { $source }
-	# TODO: If we can set the source to something else we can continue with
+	# If we can set the source to something else we can continue with
 	# the unfinished events from Parsers, because files can logically follow
 	# one an other and complete eachother
 	method set_source($s) { $source = $s }
+
+	method completed_events { \@completed_events }
+	method add_completed_event($event) { push @completed_events, $event; }
 
 	method open() {
 		croak("You need to call a subclass");

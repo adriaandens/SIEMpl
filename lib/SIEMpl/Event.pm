@@ -29,12 +29,12 @@ class SIEMpl::Event {
 		
 	}
 
-	method get_start_time() {
+	method start_time() {
 		croak("No raw events stored in Event.") if ! @raw_events;
 		return $start_time;
 	}
 
-	method get_end_time() {
+	method end_time() {
 		croak("No raw events stored in Event.") if ! @raw_events;
 		return $end_time;
 	}
