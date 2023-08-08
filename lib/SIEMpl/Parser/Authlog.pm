@@ -9,6 +9,7 @@ use Carp;
 use SIEMpl::Event;
 use SIEMpl::Event::NonInteractiveSession;
 use SIEMpl::Event::InteractiveSession;
+use SIEMpl::Event::FailedLogin;
 
 class SIEMpl::Parser::Authlog :isa(SIEMpl::Parser) {
 
@@ -50,7 +51,9 @@ class SIEMpl::Parser::Authlog :isa(SIEMpl::Parser) {
 		return $event; # For allowing testing/introspection.
 	}
 
-	method parse_cron($event, $log) {
+	# State diagram:
+	# 1 -> 2
+	method parse_cron($event, $log) { # 1
 		if($log =~ m/session opened for user ([^\(]+)\(uid=(\d+)\) by \(uid=(\d+)\)/) {
 			$event->{target_username} = $1;
 			$event->{target_userid} = $2;
@@ -62,7 +65,7 @@ class SIEMpl::Parser::Authlog :isa(SIEMpl::Parser) {
 
 			my $key = $event->{hostname} . $event->{pid} . $event->{target_username};
 			$incomplete_events{$key} = $session;
-		} elsif($log =~ m/session closed for user (\S+)/) {
+		} elsif($log =~ m/session closed for user (\S+)/) { # 2
 			$event->{target_username} = $1;
 			$event->{type} = 'session_end';
 			my $key = $event->{hostname} . $event->{pid} . $event->{target_username};
@@ -77,31 +80,47 @@ class SIEMpl::Parser::Authlog :isa(SIEMpl::Parser) {
 	}
 
 	# TODO: The obvious problem here is that one failed login and one successful login generate multiple parsed events. But it should count as 1 "logical" event such that counts in the SIEM are correct.
+	# State diagram:
+	# * 1 -> 2
+	# * 2 (2 on its own contains all info, in case we would miss 1 in our log)
+	# * 1 -> 4 -> 5
+	# * 5 (5 on its own contains all info, in case we would miss 1 or 4 in our log)
+	# * 3
 	method parse_sshd($event, $log) {
-		if($log =~ m/Connection closed by invalid user (\S+) (\S+) port (\d+)/) {
+		if($log =~ m/Invalid user (\S+) from (\S+) port (\d+)/) { # 1
 			$event->{target_username} = $1;
 			$event->{target_valid_username} = 0;
 			$event->{source_ip} = $2;
 			$event->{source_port} = $3;
-		} elsif($log =~ m/Connection closed by authenticating user (\S+) (\S+) port (\d+)/) {
+
+			$self->start_failed_login($event);
+		} elsif($log =~ m/Connection closed by invalid user (\S+) (\S+) port (\d+)/) { # 2
+			$event->{target_username} = $1;
+			$event->{target_valid_username} = 0;
+			$event->{source_ip} = $2;
+			$event->{source_port} = $3;
+
+			$self->complete_failed_login($event);
+		} elsif($log =~ m/Connection closed by authenticating user (\S+) (\S+) port (\d+)/) { # 3
 			$event->{target_username} = $1;
 			$event->{target_valid_username} = 1;
 			$event->{source_ip} = $2;
 			$event->{source_port} = $3;
 
-		} elsif($log =~ m/Invalid user (\S+) from (\S+) port (\d+)/) {
-			$event->{target_username} = $1;
-			$event->{target_valid_username} = 0;
-			$event->{source_ip} = $2;
-			$event->{source_port} = $3;
-		} elsif($log =~ m/Received disconnect from (\S+) port (\d+)/) {
+			$self->complete_failed_login($event);
+		} elsif($log =~ m/Received disconnect from (\S+) port (\d+)/) { # 4
 			$event->{source_ip} = $1;
 			$event->{source_port} = $2;
-		} elsif($log =~ m/Disconnected from invalid user (\S+) (\S+) port (\d+)/) {
+
+			# TODO: not completed! otherwise a following #5 won't find the event back...
+			#complete_failed_login($event);
+		} elsif($log =~ m/Disconnected from invalid user (\S+) (\S+) port (\d+)/) { # 5
 			$event->{target_username} = $1;
 			$event->{target_valid_username} = 0;
 			$event->{source_ip} = $2;
 			$event->{source_port} = $3;
+
+			$self->complete_failed_login($event);
 		} elsif($log =~ m/Accepted publickey from for (\S+) from (\S+) port (\d+) ssh2: RSA SHA256:(\S+)/) {
 			$event->{target_username} = $1;
 			$event->{source_ip} = $2;
@@ -111,13 +130,32 @@ class SIEMpl::Parser::Authlog :isa(SIEMpl::Parser) {
 		} elsif($log =~ m/pam_unix\(sshd:session\): session opened for user ([^\(]+)\(uid=(\d+)\) by \(uid=(\d+)\)/) {
 			$event->{target_username} = $1;
 			$event->{target_userid} = $2;
-
-			# 
 			# The one who allowed it will always be root == user of sshd?
 		}
 
 		# TODO: generate a log with a successful login with password
 		# TODO: generate a log with other types of Keys (not RSA)
+	}
+
+	method complete_failed_login($event) {
+		my $key = $event->{hostname} . $event->{pid} . $event->{source_ip};
+		my $e = $incomplete_events{$key};
+		my $new_event = 0;
+		if(!$e) {
+			$new_event = 1;	
+			$e = SIEMpl::Event::FailedLogin->new();
+		}
+		$e->add_raw_event($event);
+		$self->add_completed_event($e);
+		delete $incomplete_events{$key} if $new_event == 0; # Cleanup
+
+	}
+
+	method start_failed_login($event) {
+		my $e = SIEMpl::Event::FailedLogin->new();
+		$e->add_raw_event($event);
+		my $key = $event->{hostname} . $event->{pid} . $event->{source_ip};
+		$incomplete_events{$key} = $e;
 	}
 
 	method parse_su($event, $log) {
