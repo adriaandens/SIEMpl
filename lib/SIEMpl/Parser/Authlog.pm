@@ -159,18 +159,50 @@ class SIEMpl::Parser::Authlog :isa(SIEMpl::Parser) {
 	}
 
 	method parse_su($event, $log) {
+		if($log =~ m/\(to ([^\)]+)\) (\S+) on (\S+)/) { # 1
+			$event->{target_username} = $1;
+			$event->{source_username} = $2;
+			$event->{source_terminal} = $3;
+		} elsif($log =~ m/pam_unix\(su:session\): session opened for user ([^\(]+)\(uid=(\d+)\) by ([^\(]+)?\(uid=(\d+)\)/) {
+			$event->{target_username} = $1;
+			$event->{target_userid} = $2;
+			$event->{source_userid} = $3;
+		} elsif($log =~ m/pam_unix\(su:session\): session closed for user (\S+)/) {
+			$event->{target_username} = $1;
+		}
 
 	}
 
 	method parse_sudo($event, $log) {
+		if($log =~ m/(\S+) : TTY=(\S+) ; PWD=([^;]+) ; USER=(\S+) ; COMMAND=(.+)$/) { # 1
+			$event->{source_username} = $1;
+			$event->{tty} = $2;
+			$event->{pwd} = $3;
+			$event->{target_username} = $4;
+			$event->{cmd} = $5; 
+
+		} elsif($log =~ m/pam_unix\(sudo:session\): session opened for user ([^\(]+)\(uid=(\d+)\) by ([^\(]+)?\(uid=(\d+)\)/) {
+			
+		}
 
 	}
 
 	method parse_systemd($event, $log) {
-
+		if($log =~ m/pam_unix\(systemd-user:session\): session oepend for user ([^\(]+)\(uid=(\d+)\) by ([^\(]+)?\(uid=(\d+)\)/) {
+			$event->{target_username} = $1;
+			$event->{target_userid} = $2;
+			$event->{source_username} = $3;
+			$event->{source_userid} = $4;
+		}
 	}
 
 	method parse_systemdlogind($event, $log) {
+		if($log =~ m/New session (\S+) of user (\S+)\./) {
+			$event->{session_id} = $1;
+			$event->{username} = $2;
+		} elsif($log =~ m/Removed session (\S+)\./) {
+
+		}
 
 	}
 
