@@ -182,7 +182,10 @@ class SIEMpl::Parser::Authlog :isa(SIEMpl::Parser) {
 			$event->{cmd} = $5; 
 
 		} elsif($log =~ m/pam_unix\(sudo:session\): session opened for user ([^\(]+)\(uid=(\d+)\) by ([^\(]+)?\(uid=(\d+)\)/) {
-			
+			$event->{target_username} = $1;
+			$event->{target_userid} = $2;
+			$event->{source_username} = $3;
+			$event->{source_userid} = $4;
 		}
 
 	}
@@ -201,7 +204,7 @@ class SIEMpl::Parser::Authlog :isa(SIEMpl::Parser) {
 			$event->{session_id} = $1;
 			$event->{username} = $2;
 		} elsif($log =~ m/Removed session (\S+)\./) {
-
+			$event->{session_id} = $1;
 		}
 
 	}
