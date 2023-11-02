@@ -4,6 +4,7 @@ use 5.038000;
 our $VERSION = "0.01";
 
 use feature 'class';
+use DateTime::Format::Strptime qw(strftime);
 use Carp;
 
 use SIEMpl::Event;
