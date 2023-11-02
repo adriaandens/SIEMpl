@@ -24,9 +24,23 @@ class SIEMpl::Parser::Nginxlog :isa(SIEMpl::Parser) {
 		}
 	}
 
+#64.227.148.219 - - [02/Nov/2023:05:19:45 +0000] "GET /wp-includes/wlwmanifest.xml HTTP/1.1" 404 555 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36"
 	method parse_line($line) {
 		my %event = ("heheheheh" => "hahahaha");
-		return \$event;
+		my ($source_ip, $username, $time, $request, $status_code, $body_bytes) = $line =~ m/^(\S+) - (\S+) \[([^\]]+)\] "([^"]+)" (\d+) (\d+)/;
+
+		my $format = "%d/%b/%Y:%T %z";
+		my $strp = DateTime::Format::Strptime->new(
+			pattern => $format,
+			locale => 'en_US',
+			time_zone => 'Europe/Brussels',
+			on_error => 'croak'
+		);
+		my $dt = $strp->parse_datetime($time);
+		my $epoch = strftime("%s", $dt);
+		$event{"epoch"} = $epoch;
+
+		return \%event;
 	}
 
 	method close() {
