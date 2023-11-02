@@ -6,6 +6,7 @@ SIEM.pl - A simple SIEM (Security Information and Event Monitoring)
 # SYNOPSIS
 
     use SIEMpl;
+	# TODO: Show how to launch SIEMpl
 
 # DESCRIPTION
 
@@ -22,8 +23,8 @@ SIEM implementations are generally always the same. You have an ingestion layer 
 SIEM.pl does the following:
 * Ingestion layer: We don't ingest any data, the data that we query is stored on the filesystem and managed by other tools in terms of log rotation etc. In the case of Apache logs, you configure the Apache Web server to write its access and error logs to a file (/var/log/apache/ for example) and configure logrotate to do the rotation and size management of these files. SIEM.pl can be configured to read those files at query time but SIEM.pl does not "ingest" these files and store them in another way.
 * Storage layer: We do not have a storage layer. Albeit future versions might do caching, indexing, ... storing of the log files is externally managed (by the OS, logrotate, ...) 
-* Querying layer: SIEM.pl provides a SQL-like query language so that you don't have to learn new things to get started. SIEM.pl uses cron for scheduling queries. Before querying the
-* UI layer: SIEM.pl has a CLI interface and an efficient Web interface. 
+* Querying layer: SIEM.pl provides a SQL-like query language so that you don't have to learn new things to get started. SIEM.pl uses cron for scheduling queries.
+* UI layer: SIEM.pl has a CLI interface and an efficient, functional Web interface. 
 
 # LICENSE
 
@@ -35,3 +36,4 @@ it under the same terms as Perl itself.
 # AUTHOR
 
 Me, myself and I.
+
