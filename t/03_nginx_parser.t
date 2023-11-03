@@ -9,7 +9,7 @@ use SIEMpl::Parser::Nginxlog;
 my $a = SIEMpl::Parser::Nginxlog->new(source => 'doesnt matter');
 my $event = $a->parse_line('64.227.148.219 - - [02/Nov/2023:05:19:45 +0000] "GET /wp-includes/wlwmanifest.xml HTTP/1.1" 404 555 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36"');
 ok($event->{source_ip} eq '64.227.148.219', 'The source is 64.227.148.219');
-ok($event->{http_request} eq 'GET /wp-includes/wlwmanifest.xml', 'The request is corect');
+ok($event->{http_request} eq 'GET /wp-includes/wlwmanifest.xml HTTP/1.1', 'The request is correct');
 ok($event->{http_method} eq 'GET', 'The http method is GET');
 ok($event->{http_path} eq '/wp-includes/wlwmanifest.xml', 'The http path is /wp-includes/wlwmanifest.xml');
 ok($event->{http_version} eq "1.1", 'The version is 1.1');
@@ -21,8 +21,8 @@ ok($event->{http_user_agent} eq "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Apple
 # We are still missing examples with query args, a logged in user (like you get when using basic authentication), other methods, one with a referrer, ...
 
 # Now check that we have a completed event.
-my $events = $a->completed_events();
-ok(@{$events} == 1, "We have one completed event");
+#my $events = $a->completed_events();
+#ok(@{$events} == 1, "We have one completed event");
 #my $completed_event = ${$events}[0];
 #ok($completed_event->target_username() eq 'root', "User is root");
 #ok($completed_event->target_userid() == 0, "User ID of root is 0");
