@@ -27,15 +27,15 @@ class SIEMpl::Parser::Nginxlog :isa(SIEMpl::Parser) {
 
 #64.227.148.219 - - [02/Nov/2023:05:19:45 +0000] "GET /wp-includes/wlwmanifest.xml HTTP/1.1" 404 555 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36"
 	method parse_line($line) {
-		my %event = ("heheheheh" => "hahahaha");
-		my ($source_ip, $username, $time, $request, $status_code, $body_bytes, $referrer, $user_agent) = $line =~ m/^(\S+) - (\S+) \[([^\]]+)\] "([^"]+)" (\d+) (\d+) "([^\"]+)" "([^\"]+)"/;
+		my %event = ("hah" => "heh");
+		my ($source_ip, $username, $time, $request, $status_code, $body_bytes, $referrer, $user_agent) = $line =~ m/^(\S+) - (\S+) \[([^\]]+)\] "([^"]+)" (\d+) (\d+) "([^"]+)" "([^"]+)"/;
 		$event{source_ip} = $source_ip;
-		$event{username} = ("-" eq $username ? "" : $username);
+		$event{username} = "-" eq $username ? "" : $username;
 		$event{http_request} = $request;
 		$event{http_status_code} = $status_code;
 		$event{http_body_length} = $body_bytes;
-		$event{http_referrer} = ("-" eq $referrer ? "" : $referrer);
-		$event{http_user_agent} = ("-" eq $user_agent ? "" : $user_agent);
+		$event{http_referrer} = "-" eq $referrer ? "" : $referrer;
+		$event{http_user_agent} = "-" eq $user_agent ? "" : $user_agent;
 
 		my ($method, $path, $args, $version) = $request =~ m/^(\w+) ([^\?]+)\??(.*) HTTP\/(.*)/;
 		$event{http_method} = $method;
@@ -47,7 +47,6 @@ class SIEMpl::Parser::Nginxlog :isa(SIEMpl::Parser) {
 		my $strp = DateTime::Format::Strptime->new(
 			pattern => $format,
 			locale => 'en_US',
-			time_zone => 'Europe/Brussels',
 			on_error => 'croak'
 		);
 		my $dt = $strp->parse_datetime($time);
