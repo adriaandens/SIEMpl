@@ -1,4 +1,4 @@
-package SIEMpl::Parser::Authlog;
+package SIEMpl::Parser::Nginxlog;
 use 5.038000;
 
 our $VERSION = "0.01";
