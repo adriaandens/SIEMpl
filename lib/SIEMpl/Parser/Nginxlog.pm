@@ -27,8 +27,8 @@ class SIEMpl::Parser::Nginxlog :isa(SIEMpl::Parser) {
 
 #64.227.148.219 - - [02/Nov/2023:05:19:45 +0000] "GET /wp-includes/wlwmanifest.xml HTTP/1.1" 404 555 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36"
 	method parse_line($line) {
-		my %event = ("hah" => "heh");
-		my ($source_ip, $username, $time, $request, $status_code, $body_bytes, $referrer, $user_agent) = $line =~ m/^(\S+) - (\S+) \[([^\]]+)\] "([^"]+)" (\d+) (\d+) "([^"]+)" "([^"]+)"/;
+		my %event = ();
+		my ($source_ip, $username, $time, $request, $status_code, $body_bytes, $referrer, $user_agent) = $line =~ m/^(\S+) - (\S+) \[([^\]]+)\] "([^"]*)" (\d+) (\d+) "([^"]+)" "([^"]+)"/;
 		$event{source_ip} = $source_ip;
 		$event{username} = "-" eq $username ? "" : $username;
 		$event{http_request} = $request;
