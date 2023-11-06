@@ -8,6 +8,7 @@ use DateTime::Format::Strptime qw(strftime);
 use Carp;
 
 use SIEMpl::Event;
+use SIEMpl::Event::Http;
 
 class SIEMpl::Parser::Nginxlog :isa(SIEMpl::Parser) {
 
@@ -37,11 +38,12 @@ class SIEMpl::Parser::Nginxlog :isa(SIEMpl::Parser) {
 		$event{http_referrer} = "-" eq $referrer ? "" : $referrer;
 		$event{http_user_agent} = "-" eq $user_agent ? "" : $user_agent;
 
+		# TODO: Use a module for this (or for the path/args only) since it's too tricky to do myself.
 		my ($method, $path, $args, $version) = $request =~ m/^(\w+) ([^\?]+)\??(.*) HTTP\/(.*)/;
-		$event{http_method} = $method;
-		$event{http_path} = $path;
-		$event{http_args} = $args;
-		$event{http_version} = $version;
+		$event{http_method} = defined($method) ? $method : "";
+		$event{http_path} = defined($path) ? $path : "";
+		$event{http_args} = defined($args) ? $args : "";
+		$event{http_version} = defined($version) ? $version : "";
 
 		my $format = "%d/%b/%Y:%T %z";
 		my $strp = DateTime::Format::Strptime->new(
@@ -52,6 +54,9 @@ class SIEMpl::Parser::Nginxlog :isa(SIEMpl::Parser) {
 		my $dt = $strp->parse_datetime($time);
 		my $epoch = strftime("%s", $dt);
 		$event{"epoch"} = $epoch;
+
+		my $http_event = SIEMpl::Event::Http->new();
+		$http_event->add_raw_event(\%event);
 
 		return \%event;
 	}
