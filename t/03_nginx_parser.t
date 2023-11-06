@@ -17,6 +17,7 @@ ok($event->{http_status_code} == 404, 'The status code is 404');
 ok($event->{http_body_length} == 555, 'Body length is 555');
 ok($event->{http_referrer} eq "", 'The referrer is empty');
 ok($event->{http_user_agent} eq "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36", 'The User agent is correct');
+ok($event->{epoch} == 1698902385, "Epoch is correct");
 
 # We are still missing examples with query args, a logged in user (like you get when using basic authentication), other methods, one with a referrer, ...
 
@@ -46,6 +47,7 @@ ok($event->{http_status_code} == 400, 'The status code is 400');
 ok($event->{http_body_length} == 0, 'Body length is 0');
 ok($event->{http_referrer} eq "", 'The referrer is empty');
 ok($event->{http_user_agent} eq "", 'The User agent is correct');
+ok($event->{epoch} == 1698902396, "Epoch is correct");
 
 # Make sure it doesn't crash on any log
 my $p = SIEMpl::Parser::Nginxlog->new(source => 't/samplelogs/server_nginx.txt');
