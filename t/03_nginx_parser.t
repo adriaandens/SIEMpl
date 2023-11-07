@@ -22,8 +22,8 @@ ok($event->{epoch} == 1698902385, "Epoch is correct");
 # We are still missing examples with query args, a logged in user (like you get when using basic authentication), other methods, one with a referrer, ...
 
 # Now check that we have a completed event.
-#my $events = $a->completed_events();
-#ok(@{$events} == 1, "We have one completed event");
+my $events = $a->completed_events();
+ok(@{$events} == 1, "We have one completed event");
 #my $completed_event = ${$events}[0];
 #ok($completed_event->target_username() eq 'root', "User is root");
 #ok($completed_event->target_userid() == 0, "User ID of root is 0");

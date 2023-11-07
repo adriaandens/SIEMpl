@@ -58,6 +58,8 @@ class SIEMpl::Parser::Nginxlog :isa(SIEMpl::Parser) {
 		my $http_event = SIEMpl::Event::Http->new();
 		$http_event->add_raw_event(\%event);
 
+		$self->add_completed_event($http_event);
+
 		return \%event;
 	}
 
